@@ -13,6 +13,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ST_Meet">
+        <activity android:name=".ApiDemoActivity" />
         <activity android:name=".MeetingDetailActivity" />
         <activity android:name=".HistoryActivity" />
         <activity android:name=".ParticipantsActivity" />

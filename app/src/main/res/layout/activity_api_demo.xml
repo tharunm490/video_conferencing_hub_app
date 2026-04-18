@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#F6F8FB"
+    android:gravity="center_horizontal">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="API Integration Demo"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#111827"
+        android:layout_marginBottom="32dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sample Meeting Text:"
+        android:textStyle="italic"
+        android:textColor="#4B5563"/>
+
+    <TextView
+        android:id="@+id/textSampleSource"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="The team discussed the upcoming project release. Alex mentioned that the CameraX implementation is stable. Sara highlighted the need for better error handling in the SQLite layer. We decided to meet again tomorrow at 10 AM."
+        android:background="#E5E7EB"
+        android:padding="12dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="24dp"/>
+
+    <Button
+        android:id="@+id/btnGenerateDemo"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Generate AI Summary (Demo)"
+        android:backgroundTint="#2563EB"
+        android:textColor="@android:color/white"/>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/textApiResponse"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Response will appear here..."
+        android:textColor="#111827"
+        android:textSize="16sp"
+        android:padding="16dp"
+        android:background="@android:color/white"
+        android:elevation="2dp"/>
+
+</LinearLayout>

@@ -3,6 +3,7 @@ package com.example.st_meet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -13,13 +14,14 @@ import java.util.List;
 public class MeetingAdapter extends RecyclerView.Adapter<MeetingAdapter.ViewHolder> {
 
     private List<Meeting> meetings;
-    private OnItemClickListener listener;
+    private OnMeetingListener listener;
 
-    public interface OnItemClickListener {
+    public interface OnMeetingListener {
         void onItemClick(Meeting meeting);
+        void onDeleteClick(Meeting meeting, int position);
     }
 
-    public MeetingAdapter(List<Meeting> meetings, OnItemClickListener listener) {
+    public MeetingAdapter(List<Meeting> meetings, OnMeetingListener listener) {
         this.meetings = meetings;
         this.listener = listener;
     }
@@ -43,6 +45,12 @@ public class MeetingAdapter extends RecyclerView.Adapter<MeetingAdapter.ViewHold
                 listener.onItemClick(meeting);
             }
         });
+
+        holder.btnDelete.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onDeleteClick(meeting, position);
+            }
+        });
     }
 
     @Override
@@ -52,12 +60,14 @@ public class MeetingAdapter extends RecyclerView.Adapter<MeetingAdapter.ViewHold
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView textMeetingId, textCreatedAt, textSummary;
+        ImageButton btnDelete;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             textMeetingId = itemView.findViewById(R.id.textMeetingId);
             textCreatedAt = itemView.findViewById(R.id.textCreatedAt);
             textSummary = itemView.findViewById(R.id.textSummary);
+            btnDelete = itemView.findViewById(R.id.btnDelete);
         }
     }
 }

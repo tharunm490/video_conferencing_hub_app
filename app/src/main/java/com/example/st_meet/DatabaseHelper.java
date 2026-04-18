@@ -91,4 +91,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return meeting;
     }
+
+    public void deleteMeeting(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_MEETINGS, COLUMN_ID + "=?", new String[]{String.valueOf(id)});
+        db.close();
+    }
 }
