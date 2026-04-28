@@ -10,59 +10,64 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="50dp"
         android:layout_marginEnd="20dp"
-        android:text="Meeting"
+        android:text="@string/meeting"
         android:textColor="@android:color/white"
         android:textSize="22sp"
         android:textStyle="bold"
+        android:elevation="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/remote_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/layoutControls"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textMeetingSubtitle"
-        android:layout_width="0dp"
+        android:id="@+id/textRemoteUserName"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:visibility="gone"
-        android:text="Joined as user"
-        android:textColor="#D1D5DB"
+        android:layout_margin="8dp"
+        android:background="#80000000"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp"
+        android:text="@string/waiting_for_participant"
+        android:textColor="#FFFFFF"
         android:textSize="14sp"
+        android:elevation="10dp"
+        app:layout_constraintBottom_toBottomOf="@+id/remote_view"
+        app:layout_constraintStart_toStartOf="@+id/remote_view" />
+
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/local_view"
+        android:layout_width="120dp"
+        android:layout_height="180dp"
+        android:layout_margin="16dp"
+        android:elevation="11dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/textMeetingTitle"
         app:layout_constraintTop_toBottomOf="@+id/textMeetingTitle" />
 
-    <HorizontalScrollView
-        android:id="@+id/horizontalScrollView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        android:scrollbars="none"
-        app:layout_constraintBottom_toTopOf="@+id/layoutControls"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textMeetingTitle">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <androidx.camera.view.PreviewView
-                android:id="@+id/previewView"
-                android:layout_width="411dp"
-                android:layout_height="match_parent" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerParticipants"
-                android:layout_width="411dp"
-                android:layout_height="match_parent"
-                android:background="#111827"
-                android:padding="16dp" />
-
-        </LinearLayout>
-    </HorizontalScrollView>
+    <TextView
+        android:id="@+id/textLocalUserName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="4dp"
+        android:background="#80000000"
+        android:paddingHorizontal="4dp"
+        android:text="@string/you"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:elevation="12dp"
+        app:layout_constraintBottom_toBottomOf="@+id/local_view"
+        app:layout_constraintEnd_toEndOf="@+id/local_view"
+        app:layout_constraintStart_toStartOf="@+id/local_view" />
 
     <FrameLayout
         android:id="@+id/reactionContainer"
@@ -70,6 +75,22 @@
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@+id/layoutControls"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textSpeechStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:background="#80000000"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="2dp"
+        android:text="Listening..."
+        android:textColor="#4ADE80"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/layoutReactions"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <LinearLayout
         android:id="@+id/layoutReactions"
@@ -141,7 +162,7 @@
                 android:layout_height="56dp"
                 android:layout_margin="8dp"
                 android:background="@drawable/bg_circle_dark"
-                android:contentDescription="Mic"
+                android:contentDescription="@string/mic_desc"
                 android:padding="14dp"
                 android:src="@drawable/ic_mic" />
 
@@ -151,7 +172,7 @@
                 android:layout_height="56dp"
                 android:layout_margin="8dp"
                 android:background="@drawable/bg_circle_dark"
-                android:contentDescription="Camera"
+                android:contentDescription="@string/camera_desc"
                 android:padding="14dp"
                 android:src="@drawable/ic_videocam" />
 
@@ -161,7 +182,7 @@
                 android:layout_height="56dp"
                 android:layout_margin="8dp"
                 android:background="@drawable/bg_circle_red"
-                android:contentDescription="End Call"
+                android:contentDescription="@string/end_call_desc"
                 android:padding="14dp"
                 android:src="@drawable/ic_call_end" />
 
@@ -171,7 +192,7 @@
                 android:layout_height="56dp"
                 android:layout_margin="8dp"
                 android:background="@drawable/bg_circle_dark"
-                android:contentDescription="Switch Camera"
+                android:contentDescription="@string/switch_camera_desc"
                 android:padding="14dp"
                 android:src="@drawable/ic_videocam" />
 
@@ -189,7 +210,7 @@
                 android:layout_height="56dp"
                 android:layout_margin="8dp"
                 android:background="@drawable/bg_circle_dark"
-                android:contentDescription="Chat"
+                android:contentDescription="@string/chat_desc"
                 android:padding="14dp"
                 android:src="@drawable/ic_chat" />
 
@@ -199,7 +220,7 @@
                 android:layout_height="56dp"
                 android:layout_margin="8dp"
                 android:background="@drawable/bg_circle_dark"
-                android:contentDescription="Participants"
+                android:contentDescription="@string/participants_desc"
                 android:padding="14dp"
                 android:src="@drawable/ic_people" />
 
@@ -209,7 +230,7 @@
                 android:layout_height="56dp"
                 android:layout_margin="8dp"
                 android:background="@drawable/bg_circle_dark"
-                android:contentDescription="Share"
+                android:contentDescription="@string/share_desc"
                 android:padding="14dp"
                 android:src="@drawable/ic_share" />
 
@@ -219,7 +240,7 @@
                 android:layout_height="56dp"
                 android:layout_margin="8dp"
                 android:background="@drawable/bg_circle_dark"
-                android:contentDescription="AI Summary"
+                android:contentDescription="@string/ai_summary_desc"
                 android:padding="14dp"
                 android:src="@drawable/ic_ai_summary"
                 app:tint="@android:color/white" />

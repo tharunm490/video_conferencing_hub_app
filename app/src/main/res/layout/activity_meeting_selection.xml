@@ -34,16 +34,26 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_gravity="center"
-                    android:contentDescription="Logo"
+                    android:contentDescription="@string/logo_desc"
                     android:src="@drawable/ic_videocam"
                     app:tint="@android:color/white" />
             </FrameLayout>
 
             <TextView
+                android:id="@+id/textWelcome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="ConferenceHub"
+                android:text="@string/welcome"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/conference_hub"
                 android:textColor="@color/text_primary"
                 android:textSize="34sp"
                 android:textStyle="bold" />
@@ -52,7 +62,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Start or join a meeting"
+                android:text="@string/start_or_join_desc"
                 android:textColor="@color/text_secondary"
                 android:textSize="16sp" />
 
@@ -61,7 +71,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="48dp"
-                android:text="Create New Meeting"
+                android:text="@string/create_new_meeting"
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 app:backgroundTint="@color/brand_primary"
@@ -86,7 +96,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="12dp"
-                    android:text="OR JOIN WITH ID"
+                    android:text="@string/or_join_with_id"
                     android:textColor="#61000000"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -115,7 +125,7 @@
                     android:id="@+id/editMeetingId"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Meeting ID (e.g. abc-defg-hij)"
+                    android:hint="@string/meeting_id_hint"
                     android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -125,7 +135,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="16dp"
-                android:text="Join Meeting"
+                android:text="@string/join_meeting"
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 app:cornerRadius="16dp" />
@@ -136,19 +146,52 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="8dp"
-                android:text="View History"
+                android:text="@string/view_history"
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 app:cornerRadius="16dp"
                 app:icon="@drawable/ic_history"
                 app:iconGravity="textStart" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonProfile"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:text="@string/profile"
+                    android:textAllCaps="false"
+                    android:textSize="16sp"
+                    app:cornerRadius="16dp"
+                    app:icon="@drawable/ic_people"
+                    app:iconGravity="textStart" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonCalendar"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:text="@string/calendar"
+                    android:textAllCaps="false"
+                    android:textSize="16sp"
+                    app:cornerRadius="16dp"
+                    app:icon="@android:drawable/ic_menu_my_calendar"
+                    app:iconGravity="textStart" />
+            </LinearLayout>
+
             <TextView
                 android:id="@+id/textSignOut"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="40dp"
-                android:text="Sign Out"
+                android:text="@string/sign_out"
                 android:textColor="@color/text_secondary"
                 android:textStyle="bold" />
 

@@ -1,6 +1,5 @@
 package com.example.st_meet;
 
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -8,6 +7,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Patterns;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -17,12 +17,37 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.example.st_meet.databinding.ActivityMainBinding;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.GoogleAuthProvider;
 
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
+    private DatabaseHelper dbHelper;
+    private GoogleSignInClient googleSignInClient;
+    private FirebaseAuth mAuth;
+
+    private final ActivityResultLauncher<Intent> googleSignInLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                    try {
+                        GoogleSignInAccount account = task.getResult(ApiException.class);
+                        firebaseAuthWithGoogle(account.getIdToken());
+                    } catch (ApiException e) {
+                        Toast.makeText(this, "Google sign in failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
 
     private final ActivityResultLauncher<String[]> permissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), this::onPermissionResult);
@@ -33,24 +58,34 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        binding.buttonSignIn.setOnClickListener(v -> validateAndContinue());
+        dbHelper = new DatabaseHelper(this);
+        mAuth = FirebaseAuth.getInstance();
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
+
+        binding.buttonSignIn.setOnClickListener(v -> validateAndSignIn());
         binding.buttonGoogle.setOnClickListener(v -> {
-            binding.editEmail.setText("demo@conferencehub.app");
-            binding.editPassword.setText("password123");
-            validateAndContinue();
+            Intent signInIntent = googleSignInClient.getSignInIntent();
+            googleSignInLauncher.launch(signInIntent);
         });
         binding.textForgotPassword.setOnClickListener(v ->
                 Toast.makeText(this, "Forgot Password flow can be added next.", Toast.LENGTH_SHORT).show());
-        binding.textSignUp.setOnClickListener(v ->
-                Toast.makeText(this, "Sign Up flow can be added next.", Toast.LENGTH_SHORT).show());
+        binding.textSignUp.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SignUpActivity.class);
+            startActivity(intent);
+        });
     }
 
-    private void validateAndContinue() {
+    private void validateAndSignIn() {
         String email = binding.editEmail.getText() == null ? "" : binding.editEmail.getText().toString().trim();
         String password = binding.editPassword.getText() == null ? "" : binding.editPassword.getText().toString().trim();
 
-        if (TextUtils.isEmpty(email)) {
-            binding.inputEmail.setError("Enter email");
+        if (!isValidEmail(email)) {
+            binding.inputEmail.setError("Enter a valid email");
             return;
         }
         binding.inputEmail.setError(null);
@@ -61,7 +96,35 @@ public class MainActivity extends AppCompatActivity {
         }
         binding.inputPassword.setError(null);
 
-        requestPermissionsAndOpenConference(email);
+        if (dbHelper.checkUser(email, password)) {
+            requestPermissionsAndOpenConference(email);
+        } else {
+            Toast.makeText(this, "Invalid Email or Password", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean isValidEmail(String email) {
+        return !TextUtils.isEmpty(email) && Patterns.EMAIL_ADDRESS.matcher(email).matches();
+    }
+
+    private void firebaseAuthWithGoogle(String idToken) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        String email = mAuth.getCurrentUser().getEmail();
+                        String displayName = mAuth.getCurrentUser().getDisplayName();
+                        
+                        // Sync with local database
+                        if (!dbHelper.isUserExists(email)) {
+                            dbHelper.insertUser(displayName, "google_user", email, "google_auth");
+                        }
+
+                        requestPermissionsAndOpenConference(email);
+                    } else {
+                        Toast.makeText(MainActivity.this, "Authentication Failed.", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void requestPermissionsAndOpenConference(String email) {

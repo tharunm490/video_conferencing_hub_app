@@ -32,12 +32,12 @@ public class ParticipantsActivity extends AppCompatActivity {
 
     private void setupParticipants() {
         List<String> participants = new ArrayList<>();
-        participants.add("You (Host)");
-        participants.add("Alex");
-        participants.add("Sara");
-        participants.add("John");
-        participants.add("Emily");
-        participants.add("Michael");
+        participants.add(getString(R.string.you_host));
+        participants.add(getString(R.string.alex));
+        participants.add(getString(R.string.sara));
+        participants.add(getString(R.string.john));
+        participants.add(getString(R.string.emily));
+        participants.add(getString(R.string.michael));
 
         ParticipantAdapter adapter = new ParticipantAdapter(participants);
         binding.recyclerParticipantsList.setLayoutManager(new LinearLayoutManager(this));

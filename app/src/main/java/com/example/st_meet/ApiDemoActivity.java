@@ -33,8 +33,8 @@ public class ApiDemoActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private OkHttpClient client;
 
-    // TODO: Replace with your actual ApyHub Token for the demo
-    private static final String APY_TOKEN = "";
+    // The token is now pulled from BuildConfig for security
+    private static final String APY_TOKEN = BuildConfig.APY_TOKEN;
     private static final String API_URL = "https://api.apyhub.com/ai/summarize-text";
 
     @Override

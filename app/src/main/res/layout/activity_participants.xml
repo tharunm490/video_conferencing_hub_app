@@ -15,7 +15,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="?attr/homeAsUpIndicator"
-        app:title="Participants"
+        app:title="@string/participants"
         app:titleTextColor="@color/text_primary" />
 
     <androidx.recyclerview.widget.RecyclerView

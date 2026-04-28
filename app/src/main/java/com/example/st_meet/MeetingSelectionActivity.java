@@ -14,7 +14,9 @@ import java.util.UUID;
 public class MeetingSelectionActivity extends AppCompatActivity {
 
     private ActivityMeetingSelectionBinding binding;
+    private DatabaseHelper dbHelper;
     private String userEmail;
+    private String userName = "Guest";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,21 +24,28 @@ public class MeetingSelectionActivity extends AppCompatActivity {
         binding = ActivityMeetingSelectionBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        dbHelper = new DatabaseHelper(this);
         userEmail = getIntent().getStringExtra("user_email");
+        
+        android.util.Pair<String, String> userInfo = dbHelper.getUserInfo(userEmail);
+        if (userInfo != null) {
+            userName = userInfo.first;
+            binding.textWelcome.setText(getString(R.string.welcome_user, userName));
+        }
 
         binding.buttonCreateMeeting.setOnClickListener(v -> {
             String meetingId = UUID.randomUUID().toString().substring(0, 8);
-            startMeeting(meetingId);
+            startMeeting(meetingId, true);
         });
 
         binding.buttonJoinMeeting.setOnClickListener(v -> {
             String meetingId = binding.editMeetingId.getText().toString().trim();
             if (TextUtils.isEmpty(meetingId)) {
-                binding.inputMeetingId.setError("Enter Meeting ID");
+                binding.inputMeetingId.setError(getString(R.string.enter_meeting_id));
                 return;
             }
             binding.inputMeetingId.setError(null);
-            startMeeting(meetingId);
+            startMeeting(meetingId, false);
         });
 
         binding.textSignOut.setOnClickListener(v -> {
@@ -49,12 +58,25 @@ public class MeetingSelectionActivity extends AppCompatActivity {
             Intent intent = new Intent(MeetingSelectionActivity.this, HistoryActivity.class);
             startActivity(intent);
         });
+
+        binding.buttonProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(MeetingSelectionActivity.this, ProfileActivity.class);
+            intent.putExtra("user_email", userEmail);
+            startActivity(intent);
+        });
+
+        binding.buttonCalendar.setOnClickListener(v -> {
+            Intent intent = new Intent(MeetingSelectionActivity.this, CalendarActivity.class);
+            startActivity(intent);
+        });
     }
 
-    private void startMeeting(String meetingId) {
+    private void startMeeting(String meetingId, boolean isCaller) {
         Intent intent = new Intent(MeetingSelectionActivity.this, ConferenceActivity.class);
         intent.putExtra("user_email", userEmail);
+        intent.putExtra("user_name", userName);
         intent.putExtra("meeting_id", meetingId);
+        intent.putExtra("is_caller", isCaller);
         startActivity(intent);
     }
 }

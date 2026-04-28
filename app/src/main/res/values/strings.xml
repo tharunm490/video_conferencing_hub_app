@@ -1,3 +1,67 @@
 <resources>
     <string name="app_name">Conference App</string>
+    <string name="logo_desc">Logo</string>
+    <string name="conference_hub">ConferenceHub</string>
+    <string name="tagline">Connect face-to-face, anywhere</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="sign_in">Sign In</string>
+    <string name="or">OR</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="dont_have_account">Don\'t have an account? </string>
+    <string name="sign_up">Sign Up</string>
+
+    <string name="join_conference_hub">Join ConferenceHub</string>
+    <string name="create_account_desc">Create an account to get started</string>
+    <string name="full_name">Full Name</string>
+    <string name="username">Username</string>
+    <string name="already_have_account">Already have an account? </string>
+
+    <string name="welcome">Welcome!</string>
+    <string name="start_or_join_desc">Start or join a meeting</string>
+    <string name="create_new_meeting">Create New Meeting</string>
+    <string name="or_join_with_id">OR JOIN WITH ID</string>
+    <string name="meeting_id_hint">Meeting ID (e.g. abc-defg-hij)</string>
+    <string name="join_meeting">Join Meeting</string>
+    <string name="view_history">View History</string>
+    <string name="sign_out">Sign Out</string>
+
+    <string name="meeting_history">Meeting History</string>
+    <string name="no_history">No meeting history found</string>
+
+    <string name="meeting">Meeting</string>
+    <string name="waiting_for_participant">Waiting for participant...</string>
+    <string name="mic_desc">Mic</string>
+    <string name="camera_desc">Camera</string>
+    <string name="end_call_desc">End Call</string>
+    <string name="switch_camera_desc">Switch Camera</string>
+    <string name="chat_desc">Chat</string>
+    <string name="participants_desc">Participants</string>
+    <string name="share_desc">Share</string>
+    <string name="ai_summary_desc">AI Summary</string>
+    <string name="participants">Participants</string>
+    <string name="meeting_detail">Meeting Detail</string>
+    <string name="meeting_id">Meeting ID</string>
+    <string name="date_time">Date &amp; Time</string>
+    <string name="in_call_messages">In-call messages</string>
+    <string name="send_message_hint">Send a message</string>
+    <string name="participant">Participant: %s</string>
+    <string name="you">You</string>
+    <string name="you_host">You (Host)</string>
+    <string name="alex">Alex</string>
+    <string name="sara">Sara</string>
+    <string name="john">John</string>
+    <string name="emily">Emily</string>
+    <string name="michael">Michael</string>
+    <string name="welcome_user">Welcome, %s</string>
+    <string name="enter_meeting_id">Enter Meeting ID</string>
+    <string name="placeholder_meeting_id">abc-defg-hij</string>
+    <string name="placeholder_date_time">Oct 24, 2023 10:30 AM</string>
+    <string name="summary_placeholder">The summary will appear here...</string>
+    <string name="meeting_id_label">ID: %s</string>
+    <string name="delete">Delete</string>
+    <string name="meeting_deleted">Meeting deleted</string>
+    <string name="profile">Profile</string>
+    <string name="calendar">Calendar</string>
 </resources>

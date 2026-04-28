@@ -4,6 +4,13 @@
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -20,6 +27,10 @@
         <activity android:name=".MeetingSelectionActivity" />
         <activity android:name=".ConferenceActivity" />
         <activity android:name=".MeetingRoomActivity" />
+        <activity android:name=".SignUpActivity" />
+        <activity android:name=".ProfileActivity" />
+        <activity android:name=".CalendarActivity" />
+        <receiver android:name=".ReminderReceiver" android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">

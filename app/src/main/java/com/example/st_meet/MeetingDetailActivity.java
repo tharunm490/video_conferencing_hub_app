@@ -33,6 +33,7 @@ public class MeetingDetailActivity extends AppCompatActivity {
             binding.textMeetingId.setText(meeting.getMeetingId());
             binding.textCreatedAt.setText(meeting.getCreatedAt());
             binding.textFullSummary.setText(meeting.getSummary());
+            binding.textFullTranscript.setText(meeting.getFullText());
         }
     }
 }

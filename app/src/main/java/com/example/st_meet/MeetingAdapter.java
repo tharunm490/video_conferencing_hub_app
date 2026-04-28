@@ -36,9 +36,18 @@ public class MeetingAdapter extends RecyclerView.Adapter<MeetingAdapter.ViewHold
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Meeting meeting = meetings.get(position);
-        holder.textMeetingId.setText("ID: " + meeting.getMeetingId());
+        holder.textMeetingId.setText(holder.itemView.getContext().getString(R.string.meeting_id_label, meeting.getMeetingId()));
         holder.textCreatedAt.setText(meeting.getCreatedAt());
         holder.textSummary.setText(meeting.getSummary());
+        
+        if (meeting.getFullText() != null && !meeting.getFullText().isEmpty()) {
+            holder.textFullText.setVisibility(View.VISIBLE);
+            holder.textFullText.setText(meeting.getFullText());
+            if (holder.textTranscriptLabel != null) holder.textTranscriptLabel.setVisibility(View.VISIBLE);
+        } else {
+            holder.textFullText.setVisibility(View.GONE);
+            if (holder.textTranscriptLabel != null) holder.textTranscriptLabel.setVisibility(View.GONE);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
@@ -59,7 +68,7 @@ public class MeetingAdapter extends RecyclerView.Adapter<MeetingAdapter.ViewHold
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView textMeetingId, textCreatedAt, textSummary;
+        TextView textMeetingId, textCreatedAt, textSummary, textFullText, textTranscriptLabel;
         ImageButton btnDelete;
 
         public ViewHolder(@NonNull View itemView) {
@@ -67,6 +76,8 @@ public class MeetingAdapter extends RecyclerView.Adapter<MeetingAdapter.ViewHold
             textMeetingId = itemView.findViewById(R.id.textMeetingId);
             textCreatedAt = itemView.findViewById(R.id.textCreatedAt);
             textSummary = itemView.findViewById(R.id.textSummary);
+            textFullText = itemView.findViewById(R.id.textFullText);
+            textTranscriptLabel = itemView.findViewById(R.id.textTranscriptLabel);
             btnDelete = itemView.findViewById(R.id.btnDelete);
         }
     }

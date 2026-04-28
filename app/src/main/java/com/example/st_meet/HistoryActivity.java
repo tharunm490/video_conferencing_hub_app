@@ -59,7 +59,7 @@ public class HistoryActivity extends AppCompatActivity {
                     adapter.notifyItemRemoved(position);
                     adapter.notifyItemRangeChanged(position, meetingList.size());
                     
-                    Toast.makeText(HistoryActivity.this, "Meeting deleted", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(HistoryActivity.this, R.string.meeting_deleted, Toast.LENGTH_SHORT).show();
 
                     // Check if list is now empty
                     if (meetingList.isEmpty()) {
