@@ -80,4 +80,7 @@ dependencies {
 
     // WebRTC
     implementation(libs.webrtc)
+
+    // MPAndroidChart
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }

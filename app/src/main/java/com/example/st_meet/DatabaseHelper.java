@@ -12,7 +12,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "meetings_db";
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 7;
 
     private static final String TABLE_MEETINGS = "meetings";
     private static final String COLUMN_ID = "id";
@@ -20,6 +20,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_CREATED_AT = "created_at";
     private static final String COLUMN_SUMMARY = "summary";
     private static final String COLUMN_FULL_TEXT = "full_text";
+
+    private static final String TABLE_MESSAGES = "messages";
+    private static final String COLUMN_MSG_ID = "id";
+    private static final String COLUMN_MSG_MEETING_ID = "meeting_id";
+    private static final String COLUMN_MSG_USER = "user_name";
+    private static final String COLUMN_MSG_TEXT = "message";
+    private static final String COLUMN_MSG_TIME = "timestamp";
 
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_USER_ID = "user_id";
@@ -60,6 +67,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_NOTE_DATE + " TEXT,"
                 + COLUMN_NOTE_TEXT + " TEXT" + ")";
         db.execSQL(CREATE_NOTES_TABLE);
+
+        String CREATE_MESSAGES_TABLE = "CREATE TABLE " + TABLE_MESSAGES + "("
+                + COLUMN_MSG_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_MSG_MEETING_ID + " TEXT,"
+                + COLUMN_MSG_USER + " TEXT,"
+                + COLUMN_MSG_TEXT + " TEXT,"
+                + COLUMN_MSG_TIME + " TEXT" + ")";
+        db.execSQL(CREATE_MESSAGES_TABLE);
     }
 
     @Override
@@ -74,10 +89,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     + COLUMN_NOTE_TEXT + " TEXT" + ")";
             db.execSQL(CREATE_NOTES_TABLE);
         }
-        if (oldVersion < 6) {
-            // Check if full_text already exists to avoid errors, although we are technically mapping it to transcript
-            // In the current schema, full_text was added in version 4.
-            // We'll treat COLUMN_FULL_TEXT as the transcript column.
+        if (oldVersion < 7) {
+            String CREATE_MESSAGES_TABLE = "CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGES + "("
+                    + COLUMN_MSG_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    + COLUMN_MSG_MEETING_ID + " TEXT,"
+                    + COLUMN_MSG_USER + " TEXT,"
+                    + COLUMN_MSG_TEXT + " TEXT,"
+                    + COLUMN_MSG_TIME + " TEXT" + ")";
+            db.execSQL(CREATE_MESSAGES_TABLE);
         }
     }
 
@@ -225,5 +244,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_MEETINGS, COLUMN_ID + "=?", new String[]{String.valueOf(id)});
         // db.close(); // Commented out to keep connection open for Database Inspector
+    }
+
+    public long insertMessage(String meetingId, String userName, String messageText, String timestamp) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_MSG_MEETING_ID, meetingId);
+        values.put(COLUMN_MSG_USER, userName);
+        values.put(COLUMN_MSG_TEXT, messageText);
+        values.put(COLUMN_MSG_TIME, timestamp);
+        return db.insert(TABLE_MESSAGES, null, values);
+    }
+
+    public List<Message> getMessages(String meetingId) {
+        List<Message> messages = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_MESSAGES, null, COLUMN_MSG_MEETING_ID + "=?", new String[]{meetingId}, null, null, COLUMN_MSG_ID + " ASC");
+        if (cursor.moveToFirst()) {
+            do {
+                messages.add(new Message(
+                        cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_MSG_ID)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MSG_MEETING_ID)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MSG_USER)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MSG_TEXT)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MSG_TIME))
+                ));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return messages;
     }
 }
