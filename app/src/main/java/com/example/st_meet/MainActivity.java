@@ -21,6 +21,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
@@ -116,8 +118,9 @@ public class MainActivity extends AppCompatActivity {
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        String email = mAuth.getCurrentUser().getEmail();
-                        String displayName = mAuth.getCurrentUser().getDisplayName();
+                        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+                        String email = account != null ? account.getEmail() : mAuth.getCurrentUser().getEmail();
+                        String displayName = account != null ? account.getDisplayName() : mAuth.getCurrentUser().getDisplayName();
                         
                         // Sync with local database
                         if (!dbHelper.isUserExists(email)) {
@@ -132,6 +135,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestPermissionsAndOpenConference(String email) {
+        // Check Google Play Services
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+                apiAvailability.getErrorDialog(this, resultCode, 9000).show();
+            } else {
+                Toast.makeText(this, "This device does not support Google Play Services.", Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+
         boolean cameraGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
         boolean micGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
 
@@ -147,7 +162,12 @@ public class MainActivity extends AppCompatActivity {
         boolean micGranted = Boolean.TRUE.equals(result.get(Manifest.permission.RECORD_AUDIO));
 
         if (cameraGranted && micGranted) {
-            String email = binding.editEmail.getText() == null ? "Guest User" : binding.editEmail.getText().toString().trim();
+            String email;
+            if (mAuth.getCurrentUser() != null) {
+                email = mAuth.getCurrentUser().getEmail();
+            } else {
+                email = binding.editEmail.getText() == null ? "Guest User" : binding.editEmail.getText().toString().trim();
+            }
             openConferenceWithDelay(email);
         } else {
             Toast.makeText(this, "Camera and microphone permissions are required.", Toast.LENGTH_LONG).show();

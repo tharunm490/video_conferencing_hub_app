@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.st_meet.databinding.ActivityConferenceBinding;
@@ -98,12 +99,11 @@ public class ConferenceActivity extends AppCompatActivity {
     private List<ChatMessage> chatMessages = new ArrayList<>();
     private ChatAdapter chatAdapter;
 
-    // Speech-to-Text
-    private SpeechRecognizer speechRecognizer;
-    private StringBuilder fullMeetingText = new StringBuilder();
-    private String currentPartialText = "";
-    private Intent speechIntent;
-    private static final int PERMISSION_SPEECH_REQUEST_CODE = 1001;
+    // Chatbot
+    private List<ChatbotMessage> chatbotMessages = new ArrayList<>();
+    private ChatbotAdapter chatbotAdapter;
+    private static final String GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+    private static final String GROQ_API_KEY = BuildConfig.GROQ_API_KEY;
 
     // AI Summary Constants
     private static final String API_URL = "https://api.apyhub.com/ai/summarize-text";
@@ -181,7 +181,6 @@ public class ConferenceActivity extends AppCompatActivity {
         // Removed listenForTranscript() to ensure only local speech is captured for AI notes.
 
         if (checkPermissions()) {
-            initSpeechRecognizer();
             initWebRTC();
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, 101);
@@ -234,7 +233,7 @@ public class ConferenceActivity extends AppCompatActivity {
         PeerConnectionFactory.InitializationOptions options = PeerConnectionFactory.InitializationOptions.builder(this).createInitializationOptions();
         PeerConnectionFactory.initialize(options);
 
-        // Build the audio module with VOICE_COMMUNICATION for better compatibility with SpeechRecognizer
+        // Build the audio module
         audioDeviceModule = JavaAudioDeviceModule.builder(this)
                 .setUseHardwareAcousticEchoCanceler(true)
                 .setUseHardwareNoiseSuppressor(true)
@@ -262,7 +261,7 @@ public class ConferenceActivity extends AppCompatActivity {
         MediaConstraints audioConstraints = new MediaConstraints();
         AudioSource audioSource = factory.createAudioSource(audioConstraints);
         localAudioTrack = factory.createAudioTrack("102", audioSource);
-        localAudioTrack.setEnabled(true); // Enable track by default, but HW might be restricted by SpeechRecognizer
+        localAudioTrack.setEnabled(true);
 
         initPeerConnection();
     }
@@ -322,15 +321,10 @@ public class ConferenceActivity extends AppCompatActivity {
                         ((VideoTrack) rtpReceiver.track()).addSink(binding.remoteView);
                     });
                 }
-                // Remote audio joined - refresh local mic once to keep recognition alive
+                // Remote audio joined
                 if (rtpReceiver.track() != null && "audio".equals(rtpReceiver.track().kind()) && !hasRefreshedMic) {
                     hasRefreshedMic = true;
-                    runOnUiThread(() -> {
-                        if (speechRecognizer != null) {
-                            speechRecognizer.cancel();
-                            startSpeechRecognizer();
-                        }
-                    });
+                    Log.d("WebRTC", "Remote audio track joined");
                 }
             }
         });
@@ -524,10 +518,6 @@ public class ConferenceActivity extends AppCompatActivity {
         });
 
         binding.buttonEndCall.setOnClickListener(v -> {
-            if (speechRecognizer != null) {
-                speechRecognizer.stopListening();
-            }
-            
             // FETCH ALL MESSAGES FROM SQLITE FOR SUMMARY
             List<Message> messages = dbHelper.getMessages(meetingId);
             StringBuilder fullChatText = new StringBuilder();
@@ -543,24 +533,7 @@ public class ConferenceActivity extends AppCompatActivity {
             generateAiSummary(finalText);
         });
 
-        binding.buttonAiSummary.setOnClickListener(v -> {
-            if (!isRecordingNotes) {
-                isRecordingNotes = true;
-                binding.buttonAiSummary.setBackgroundResource(R.drawable.bg_circle_red);
-                binding.textSpeechStatus.setVisibility(View.VISIBLE);
-                binding.textSpeechStatus.setText("Notes: Recording...");
-                Toast.makeText(this, "Capturing your speech for AI notes...", Toast.LENGTH_SHORT).show();
-                startSpeechRecognizer();
-            } else {
-                isRecordingNotes = false;
-                binding.buttonAiSummary.setBackgroundResource(R.drawable.bg_circle_dark);
-                binding.textSpeechStatus.setVisibility(View.GONE);
-                if (speechRecognizer != null) {
-                    speechRecognizer.stopListening();
-                }
-                Toast.makeText(this, "Notes paused.", Toast.LENGTH_SHORT).show();
-            }
-        });
+        binding.buttonAiSummary.setOnClickListener(v -> showChatbotSheet());
 
         binding.buttonChat.setOnClickListener(v -> showChatSheet());
         binding.buttonParticipants.setOnClickListener(v -> {
@@ -656,6 +629,115 @@ public class ConferenceActivity extends AppCompatActivity {
         });
     }
 
+    private void showChatbotSheet() {
+        BottomSheetDialog chatbotSheet = new BottomSheetDialog(this);
+        View view = getLayoutInflater().inflate(R.layout.layout_chatbot_sheet, null);
+        chatbotSheet.setContentView(view);
+
+        RecyclerView rvChatbot = view.findViewById(R.id.rvChatbot);
+        EditText etInput = view.findViewById(R.id.etChatbotInput);
+        View btnSend = view.findViewById(R.id.btnChatbotSend);
+        View pbChatbot = view.findViewById(R.id.pbChatbot);
+
+        rvChatbot.setLayoutManager(new LinearLayoutManager(this));
+        chatbotAdapter = new ChatbotAdapter(chatbotMessages);
+        rvChatbot.setAdapter(chatbotAdapter);
+
+        btnSend.setOnClickListener(v -> {
+            String query = etInput.getText().toString().trim();
+            if (!query.isEmpty()) {
+                chatbotMessages.add(new ChatbotMessage(query, true));
+                chatbotAdapter.notifyItemInserted(chatbotMessages.size() - 1);
+                rvChatbot.scrollToPosition(chatbotMessages.size() - 1);
+                etInput.setText("");
+                pbChatbot.setVisibility(View.VISIBLE);
+                callGroqApi(query, pbChatbot, rvChatbot);
+            }
+        });
+
+        chatbotSheet.show();
+    }
+
+    private void callGroqApi(String query, View pb, RecyclerView rv) {
+        // Collect meeting context from SQLite messages
+        List<Message> messages = dbHelper.getMessages(meetingId);
+        StringBuilder context = new StringBuilder();
+        for (Message msg : messages) {
+            context.append(msg.getUserName()).append(": ").append(msg.getMessageText()).append("\n");
+        }
+
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("model", "llama-3.3-70b-versatile");
+            org.json.JSONArray messagesArray = new org.json.JSONArray();
+
+            JSONObject systemMsg = new JSONObject();
+            systemMsg.put("role", "system");
+            systemMsg.put("content", "You are a meeting assistant. Use the following chat transcript to answer the user's question accurately.\n\nTranscript:\n" + context.toString());
+            messagesArray.put(systemMsg);
+
+            // Add previous chatbot conversation history for multi-turn
+            for (ChatbotMessage msg : chatbotMessages) {
+                JSONObject m = new JSONObject();
+                m.put("role", msg.isUser() ? "user" : "assistant");
+                m.put("content", msg.getText());
+                messagesArray.put(m);
+            }
+
+            jsonBody.put("messages", messagesArray);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.parse("application/json; charset=utf-8"));
+        Request request = new Request.Builder()
+                .url(GROQ_API_URL)
+                .post(body)
+                .addHeader("Authorization", "Bearer " + GROQ_API_KEY)
+                .addHeader("Content-Type", "application/json")
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                runOnUiThread(() -> {
+                    pb.setVisibility(View.GONE);
+                    chatbotMessages.add(new ChatbotMessage("Error: Could not reach AI assistant.", false));
+                    chatbotAdapter.notifyItemInserted(chatbotMessages.size() - 1);
+                });
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                String responseBody = response.body() != null ? response.body().string() : "";
+                runOnUiThread(() -> {
+                    pb.setVisibility(View.GONE);
+                    try {
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+                        if (jsonResponse.has("choices")) {
+                            String aiResponse = jsonResponse.getJSONArray("choices")
+                                    .getJSONObject(0)
+                                    .getJSONObject("message")
+                                    .getString("content");
+                            chatbotMessages.add(new ChatbotMessage(aiResponse, false));
+                        } else if (jsonResponse.has("error")) {
+                            String errorMsg = jsonResponse.getJSONObject("error").getString("message");
+                            chatbotMessages.add(new ChatbotMessage("AI Error: " + errorMsg, false));
+                        } else {
+                            chatbotMessages.add(new ChatbotMessage("Unexpected AI response format.", false));
+                        }
+                        chatbotAdapter.notifyItemInserted(chatbotMessages.size() - 1);
+                        rv.scrollToPosition(chatbotMessages.size() - 1);
+                    } catch (JSONException e) {
+                        chatbotMessages.add(new ChatbotMessage("Error parsing AI response.", false));
+                        chatbotAdapter.notifyItemInserted(chatbotMessages.size() - 1);
+                        Log.e("GroqAPI", "Parse error: " + responseBody, e);
+                    }
+                });
+            }
+        });
+    }
+
     private void showAiSummarySheet() {
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
         View sheetView = LayoutInflater.from(this).inflate(R.layout.layout_ai_summary_sheet, null);
@@ -682,166 +764,10 @@ public class ConferenceActivity extends AppCompatActivity {
                 }).start();
     }
 
-    private void initSpeechRecognizer() {
-        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            Log.e("SpeechRecognizer", "Recognition not available");
-            Toast.makeText(this, "Speech recognition not available on this device", Toast.LENGTH_LONG).show();
-            return;
-        }
-        if (speechRecognizer != null) return;
-
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-        speechIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        speechIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-        speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, java.util.Locale.getDefault().toString());
-        speechIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getPackageName());
-        speechIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
-        // Helps with hardware contention on some devices
-        speechIntent.putExtra("android.speech.extra.DICTATION_MODE", true);
-
-        speechRecognizer.setRecognitionListener(new RecognitionListener() {
-            @Override public void onReadyForSpeech(Bundle params) { 
-                Log.d("SpeechRecognizer", "onReadyForSpeech");
-                isListening = true;
-                
-                // Re-enable WebRTC audio now that SpeechRecognizer has the mic handle
-                if (localAudioTrack != null) localAudioTrack.setEnabled(isMicOn);
-                
-                if (isRecordingNotes) {
-                    binding.textSpeechStatus.setText("Notes: Listening...");
-                    binding.textSpeechStatus.setTextColor(android.graphics.Color.parseColor("#4ADE80"));
-                }
-            }
-            @Override public void onBeginningOfSpeech() { 
-                Log.d("SpeechRecognizer", "onBeginningOfSpeech");
-                if (isRecordingNotes) {
-                    binding.textSpeechStatus.setText("Notes: Capturing...");
-                }
-            }
-            @Override public void onRmsChanged(float rmsdB) {}
-            @Override public void onBufferReceived(byte[] buffer) {}
-            @Override public void onEndOfSpeech() { 
-                Log.d("SpeechRecognizer", "onEndOfSpeech");
-                isListening = false;
-            }
-            @Override
-            public void onError(int error) {
-                Log.e("SpeechRecognizer", "Error: " + error);
-                isListening = false;
-                
-                // Ensure audio is back on if an error occurs
-                if (localAudioTrack != null) localAudioTrack.setEnabled(isMicOn);
-                
-                String message;
-                switch (error) {
-                    case SpeechRecognizer.ERROR_AUDIO: message = "Audio error (Mic busy?)"; break;
-                    case SpeechRecognizer.ERROR_CLIENT: message = "Client error"; break;
-                    case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS: message = "Permissions error"; break;
-                    case SpeechRecognizer.ERROR_NETWORK: message = "Network error"; break;
-                    case SpeechRecognizer.ERROR_NETWORK_TIMEOUT: message = "Network timeout"; break;
-                    case SpeechRecognizer.ERROR_NO_MATCH: message = "No speech detected"; break;
-                    case SpeechRecognizer.ERROR_RECOGNIZER_BUSY: message = "Recognizer busy"; break;
-                    case SpeechRecognizer.ERROR_SERVER: message = "Server error"; break;
-                    case SpeechRecognizer.ERROR_SPEECH_TIMEOUT: message = "Speech timeout"; break;
-                    default: message = "Error " + error; break;
-                }
-                
-                if (isRecordingNotes) {
-                    binding.textSpeechStatus.setText("Notes: " + message);
-                    binding.textSpeechStatus.setTextColor(android.graphics.Color.YELLOW);
-                    
-                    // Critical: if busy or audio error, wait a bit longer before retry
-                    if (error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY || error == SpeechRecognizer.ERROR_AUDIO) {
-                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                            if (isRecordingNotes) restartSpeechRecognizer();
-                        }, 2000);
-                    } else {
-                        restartSpeechRecognizer();
-                    }
-                }
-            }
-            @Override
-            public void onResults(Bundle results) {
-                isListening = false;
-                ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                if (matches != null && !matches.isEmpty()) {
-                    String text = matches.get(0);
-                    Log.d("SpeechRecognizer", "Captured: " + text);
-                    fullMeetingText.append(text).append(". ");
-                    // Show confirmation briefly
-                    if (isRecordingNotes) {
-                        binding.textSpeechStatus.setText("Notes: Captured!");
-                        binding.textSpeechStatus.setTextColor(android.graphics.Color.CYAN);
-                    }
-                }
-                currentPartialText = ""; 
-                if (isRecordingNotes) {
-                    restartSpeechRecognizer();
-                }
-            }
-            @Override
-            public void onPartialResults(Bundle partialResults) {
-                ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                if (matches != null && !matches.isEmpty()) {
-                    currentPartialText = matches.get(0);
-                    Log.d("SpeechRecognizer", "Partial: " + currentPartialText);
-                    if (isRecordingNotes) {
-                        binding.textSpeechStatus.setText("Notes: " + currentPartialText);
-                        binding.textSpeechStatus.setTextColor(android.graphics.Color.WHITE);
-                    }
-                }
-            }
-            @Override public void onEvent(int eventType, Bundle params) {}
-        });
-    }
-
-    private void startSpeechRecognizer() {
-        if (!isRecordingNotes) return;
-        try {
-            if (speechRecognizer != null) {
-                // IMPORTANT: Mute WebRTC mic track so SpeechRecognizer can take control of the HW
-                if (localAudioTrack != null) localAudioTrack.setEnabled(false);
-                
-                speechRecognizer.cancel();
-                speechRecognizer.startListening(speechIntent);
-                Log.d("SpeechRecognizer", "startListening called (WebRTC audio temporarily disabled)");
-            }
-        } catch (Exception e) {
-            Log.e("SpeechRecognizer", "startListening failed: " + e.getMessage());
-            isListening = false;
-            if (localAudioTrack != null) localAudioTrack.setEnabled(isMicOn);
-        }
-    }
-
-    private void restartSpeechRecognizer() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            if (speechRecognizer != null && isRecordingNotes) {
-                startSpeechRecognizer();
-            }
-        }, 500);
-    }
-
-    private void listenForTranscript() {
-        signalingRef.child("transcript").addChildEventListener(new com.google.firebase.database.ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot snapshot, String previousChildName) {
-                String remoteSpeech = snapshot.getValue(String.class);
-                Log.d("ConferenceActivity", "Transcript received: " + remoteSpeech);
-                if (remoteSpeech != null && !remoteSpeech.startsWith(userName + ":")) {
-                    fullMeetingText.append("\n").append(remoteSpeech);
-                }
-            }
-            @Override public void onChildChanged(@NonNull DataSnapshot snapshot, String previousChildName) {}
-            @Override public void onChildRemoved(@NonNull DataSnapshot snapshot) {}
-            @Override public void onChildMoved(@NonNull DataSnapshot snapshot, String previousChildName) {}
-            @Override public void onCancelled(@NonNull DatabaseError error) {}
-        });
-    }
 
     private void generateAiSummary(String textToSummarize) {
         if (textToSummarize.trim().isEmpty()) {
-            saveMeetingToHistory("No speech captured during meeting.", "");
+            saveMeetingToHistory("No chat messages captured during meeting.", "");
             finish();
             return;
         }
@@ -916,7 +842,6 @@ public class ConferenceActivity extends AppCompatActivity {
                 }
             }
             if (allGranted) {
-                initSpeechRecognizer();
                 initWebRTC();
             } else {
                 Toast.makeText(this, "Camera and Microphone permissions are required", Toast.LENGTH_SHORT).show();
@@ -928,10 +853,6 @@ public class ConferenceActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (speechRecognizer != null) {
-            speechRecognizer.stopListening();
-            speechRecognizer.destroy();
-        }
         if (videoCapturer != null) {
             try {
                 videoCapturer.stopCapture();

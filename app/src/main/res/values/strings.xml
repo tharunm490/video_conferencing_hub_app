@@ -39,8 +39,11 @@
     <string name="chat_desc">Chat</string>
     <string name="participants_desc">Participants</string>
     <string name="share_desc">Share</string>
-    <string name="ai_summary_desc">AI Summary</string>
+    <string name="ai_summary_desc">AI Chatbot</string>
     <string name="participants">Participants</string>
+    <string name="chatbot_title">Meeting AI Assistant</string>
+    <string name="chatbot_subtitle">Ask me anything about the meeting</string>
+    <string name="chatbot_hint">Type your question...</string>
     <string name="meeting_detail">Meeting Detail</string>
     <string name="meeting_id">Meeting ID</string>
     <string name="date_time">Date &amp; Time</string>

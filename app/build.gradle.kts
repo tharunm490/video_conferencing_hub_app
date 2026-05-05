@@ -24,7 +24,9 @@ android {
             localProperties.load(localPropertiesFile.inputStream())
         }
         val apyToken = localProperties.getProperty("APY_TOKEN") ?: ""
+        val groqApiKey = localProperties.getProperty("GROQ_API_KEY") ?: ""
         buildConfigField("String", "APY_TOKEN", "\"$apyToken\"")
+        buildConfigField("String", "GROQ_API_KEY", "\"$groqApiKey\"")
     }
 
     buildFeatures {
